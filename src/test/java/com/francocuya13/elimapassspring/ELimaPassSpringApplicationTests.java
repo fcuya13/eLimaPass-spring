@@ -10,8 +10,4 @@ import org.springframework.boot.test.context.SpringBootTest;
 @EnableAutoConfiguration(exclude = { DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class })
 class ELimaPassSpringApplicationTests {
 
-    @Test
-    void contextLoads() {
-    }
-
 }
