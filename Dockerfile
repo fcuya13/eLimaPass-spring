@@ -1,18 +1,26 @@
-FROM eclipse-temurin:21-jdk-alpine as build
+# Build stage
+FROM maven:3.9-eclipse-temurin-21-alpine as build
 WORKDIR /workspace/app
 
-COPY mvnw .
-COPY .mvn .mvn
+# Copy pom.xml first for dependency resolution (better layer caching)
 COPY pom.xml .
-COPY src src
 
-RUN ./mvnw install -DskipTests
-RUN mkdir -p target/dependency && (cd target/dependency; jar -xf ../*.jar)
+# Download dependencies
+RUN mvn dependency:go-offline -B
 
+# Copy source code
+COPY src/ src/
+
+# Build application
+RUN mvn package -DskipTests -B
+
+# Runtime stage
 FROM eclipse-temurin:21-jre-alpine
 VOLUME /tmp
-ARG DEPENDENCY=/workspace/app/target/dependency
-COPY --from=build ${DEPENDENCY}/BOOT-INF/lib /app/lib
-COPY --from=build ${DEPENDENCY}/META-INF /app/META-INF
-COPY --from=build ${DEPENDENCY}/BOOT-INF/classes /app
-ENTRYPOINT ["java","-cp","app:app/lib/*","com.example.elimapass.eLimaPassApplication"]
+WORKDIR /app
+
+# Copy the built JAR file
+COPY --from=build /workspace/app/target/*.jar app.jar
+
+# Run the application
+ENTRYPOINT ["java","-jar","/app/app.jar"]
