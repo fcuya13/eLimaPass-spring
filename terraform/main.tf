@@ -1,3 +1,13 @@
+terraform {
+  backend "s3" {
+    bucket = "tfstate_bucket"
+    key    = "terraform.tfstate"
+    region = "us-east-1"
+    encrypt = true
+  }
+}
+
+
 # VPC Configuration (Simplified - No NAT Gateway)
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
@@ -208,7 +218,7 @@ resource "aws_ecs_task_definition" "app" {
 
   container_definitions = jsonencode([{
     name         = "${var.app_name}-container"
-    image        = "${aws_ecr_repository.app.repository_url}:latest"
+    image        = "${aws_ecr_repository.existing.repository_url}:latest"
     essential    = true
 
     portMappings = [{
