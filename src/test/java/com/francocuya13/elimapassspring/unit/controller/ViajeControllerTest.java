@@ -81,7 +81,7 @@ public class ViajeControllerTest {
 
         Viaje viaje1 = new Viaje();
         viaje1.setId(id);
-        viaje1.setFechaHora(String.valueOf(LocalDateTime.now()));
+        viaje1.setFechaHora(LocalDateTime.now());
         viaje1.setPrecioFinal(3.5);
 
         Tarifa tarifa1 = new Tarifa();
@@ -92,7 +92,7 @@ public class ViajeControllerTest {
 
         Viaje viaje2 = new Viaje();
         viaje2.setId(UUID.randomUUID());
-        viaje2.setFechaHora(String.valueOf(LocalDateTime.now().minusDays(1)));
+        viaje2.setFechaHora(LocalDateTime.now().minusDays(1));
         viaje2.setPrecioFinal(4.0);
 
         Tarifa tarifa2 = new Tarifa();
