@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.UUID;
 
 
@@ -17,7 +19,7 @@ public class Viaje {
     private UUID id;
 
     @Column(nullable = false, name = "fecha_hora")
-    private String fechaHora;
+    private LocalDateTime fechaHora;
 
     @ManyToOne
     @JoinColumn(name = "id_tarifa_id", nullable = false)

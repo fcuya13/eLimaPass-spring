@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.sql.Date;
+
 @Table
 @Getter
 @Setter
@@ -25,6 +27,6 @@ public class Tarjeta {
     private double limite;
 
     @Column(name = "fecha_vencimiento")
-    private String fechaVencimiento;
+    private Date fechaVencimiento;
 
 }

@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS paraderoruta (
 CREATE TABLE IF NOT EXISTS recarga (
     id uuid NOT NULL,
     fecha_hora timestamp with time zone NOT NULL,
-    monto_recargado numeric(10,2) NOT NULL,
+    monto_recargado float8 NOT NULL,
     medio_pago character varying(50) NOT NULL,
     codigo_tarjeta_id character varying(50) NOT NULL
 );

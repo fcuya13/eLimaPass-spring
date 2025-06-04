@@ -32,7 +32,7 @@ public class ViajeService {
 
         // Crear el viaje
         Viaje viaje = new Viaje();
-        viaje.setFechaHora(String.valueOf(LocalDateTime.now()));
+        viaje.setFechaHora(LocalDateTime.now());
         viaje.setTarifa(tarifa);
         viaje.setTarjeta(tarjeta);
         viaje.setPrecioFinal(precioFinal);

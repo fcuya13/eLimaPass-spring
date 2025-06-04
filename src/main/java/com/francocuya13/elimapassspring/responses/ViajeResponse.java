@@ -3,6 +3,8 @@ package com.francocuya13.elimapassspring.responses;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 public class ViajeResponse {
@@ -12,9 +14,9 @@ public class ViajeResponse {
     private double precioFinal;
 
     // Constructor
-    public ViajeResponse(String id, String fechaHora, String ruta, double precioFinal) {
+    public ViajeResponse(String id, LocalDateTime fechaHora, String ruta, double precioFinal) {
         this.id = id;
-        this.fechaHora = fechaHora;
+        this.fechaHora = String.valueOf(fechaHora);
         this.ruta = ruta;
         this.precioFinal = precioFinal;
     }

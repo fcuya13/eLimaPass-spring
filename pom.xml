@@ -28,6 +28,12 @@
     </scm>
     <properties>
         <java.version>21</java.version>
+        <flyway.version>10.19.0</flyway.version>
+        <postgresql.driver.version>42.7.4</postgresql.driver.version>
+        <database.driver>org.postgresql.Driver</database.driver>
+        <database.url>jdbc:postgresql://${DB.Url}/${DB.DB}</database.url>
+        <database.username>${DB.User}</database.username>
+        <database.password>${DB.Password}</database.password>
     </properties>
     <dependencies>
 
@@ -44,11 +50,6 @@
             <artifactId>spring-boot-starter-jdbc</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <scope>runtime</scope>
-        </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -126,6 +127,25 @@
             <version>4.5.1</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.flywaydb/flyway-core -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+            <version>${flyway.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+            <version>${flyway.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${postgresql.driver.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.flywaydb/flyway-database-postgresql -->
     </dependencies>
 
     <build>
@@ -146,6 +166,39 @@
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-maven-plugin</artifactId>
+                <version>${flyway.version}</version>
+                <configuration>
+                    <driver>${database.driver}</driver>
+                    <url>${database.url}</url>
+                    <user>${database.username}</user>
+                    <password>${database.password}</password>
+                    <locations>
+                        <location>filesystem:src/main/resources/migrations</location>
+                    </locations>
+                    <cleanDisabled>false</cleanDisabled>
+                    <encoding>ISO-8859-1</encoding>
+                    <cleanOnValidationError>true</cleanOnValidationError>
+                    <placeholders>
+                        <email_type.primary>hwongu@gmail.com</email_type.primary>
+                        <email_type.work>hwong@gmail.com</email_type.work>
+                    </placeholders>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>flyway database migration</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>clean</goal>
+                            <goal>baseline</goal>
+                            <goal>migrate</goal>
+                            <goal>info</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
