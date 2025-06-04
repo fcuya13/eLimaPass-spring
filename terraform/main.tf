@@ -169,29 +169,45 @@ resource "aws_iam_instance_profile" "ecs_instance" {
   name = "${var.app_name}-ecs-instance-profile"
   role = aws_iam_role.ecs_instance_role.name
 }
+resource "aws_launch_template" "ecs" {
+  name_prefix   = "${var.app_name}-ecs-"
+  image_id      = "var.ecs_ami_id" # Use your AMI ID
+  instance_type = "t2.micro"  # Use your instance type
 
-# Launch Configuration for EC2 instances
-resource "aws_launch_configuration" "ecs" {
-  name_prefix          = "${var.app_name}-ecs-"
-  image_id             = var.ecs_ami_id # Amazon ECS-optimized AMI ID
-  instance_type        = "t2.micro"     # Free tier eligible
-  iam_instance_profile = aws_iam_instance_profile.ecs_instance.name
-  security_groups      = [aws_security_group.ecs.id]
-  user_data            = <<-EOF
+  # If you had user data in your launch configuration
+  user_data = <<-EOF
                          #!/bin/bash
                          echo ECS_CLUSTER=${aws_ecs_cluster.main.name} >> /etc/ecs/ecs.config
                          EOF
 
+  # Security group settings
+  vpc_security_group_ids = [aws_security_group.ecs.id] # Replace with your security groups
+
+  # IAM instance profile if you had one
+  iam_instance_profile {
+    name = aws_iam_instance_profile.ecs_instance.name
+  }
+
   lifecycle {
     create_before_destroy = true
   }
+  tag_specifications {
+    resource_type = "instance"
+    tags = {
+      Name = "elimapass-spring-ecs-instance"
+    }
+  }
 }
+
 
 # Auto Scaling Group for ECS Instances
 resource "aws_autoscaling_group" "ecs" {
   name                 = "${var.app_name}-ecs-asg"
   vpc_zone_identifier  = [aws_subnet.public_1.id, aws_subnet.public_2.id]
-  launch_configuration = aws_launch_configuration.ecs.name
+  launch_template {
+    id      = aws_launch_template.ecs.id
+    version = "$Latest"
+  }
 
   min_size             = 1
   max_size             = 1
