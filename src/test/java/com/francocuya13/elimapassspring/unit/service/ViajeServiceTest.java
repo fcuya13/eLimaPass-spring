@@ -62,7 +62,7 @@ public class ViajeServiceTest {
         tarifa.setRuta(ruta);
 
         viaje = new Viaje();
-        viaje.setFechaHora(String.valueOf(LocalDateTime.now()));
+        viaje.setFechaHora(LocalDateTime.now());
         viaje.setTarjeta(tarjeta);
         viaje.setTarifa(tarifa);
         viaje.setPrecioFinal(PRECIO_FINAL);
