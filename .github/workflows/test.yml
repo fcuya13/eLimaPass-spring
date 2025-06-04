@@ -12,24 +12,6 @@ jobs:
     runs-on: ubuntu-latest
     container: maven:3.9-eclipse-temurin-21-alpine
 
-    services:
-      postgres:
-        # Docker Hub image
-        image: postgres
-        # Provide the password for postgres
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: elimapass-password
-          POSTGRES_DB: elimapass
-        ports:
-          - 5432:5432  # Using standard PostgreSQL port
-        # Set health checks to wait until postgres has started
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - uses: actions/checkout@v4
 
@@ -56,11 +38,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-            -Dsonar.projectKey=fcuya13_eLimaPass-spring \
-            -DDB.Url=postgres:5432 \
-            -DDB.DB=elimapass \
-            -DDB.User=postgres \
-            -DDB.Password=elimapass-password
-
+          -Dflyway.skip=true 
 
 
