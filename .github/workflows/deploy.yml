@@ -86,7 +86,11 @@ jobs:
       - name: Terraform Plan
         run: |
           cd terraform
-          terraform import aws_ecr_repository.existing elimapass-spring
+          terraform import -var="app_name=${{ env.APP_NAME }}" \
+          -var="db_username=${{ secrets.DB_USERNAME }}" \
+          -var="db_password=${{ secrets.DB_PASSWORD }}" \
+          aws_ecr_repository.existing elimapass-spring
+          
           terraform plan \
             -var="app_name=${{ env.APP_NAME }}" \
             -var="db_username=${{ secrets.DB_USERNAME }}" \
