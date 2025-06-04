@@ -88,12 +88,9 @@ jobs:
           cd terraform
           terraform plan \
             -var="region=${{ env.AWS_REGION }}" \
-            -var="app_name=elimapass" \
-            -var="ecr_repository_name=${{ env.ECR_REPOSITORY }}" \
-            -var="image_tag=${{ needs.build-and-push.outputs.image-tag }}" \
+            -var="app_name=elimapass-spring" \
             -var="db_username=${{ secrets.DB_USERNAME }}" \
             -var="db_password=${{ secrets.DB_PASSWORD }}" \
-            -var="db_schema=${{ secrets.DB_SCHEMA }}" \
             -out=tfplan
 
       - name: Terraform Apply
