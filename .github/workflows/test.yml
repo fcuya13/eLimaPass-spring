@@ -33,8 +33,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Configure PostgreSQL connection
+        run: |
+          echo "spring.datasource.url=jdbc:postgresql://postgres:5432/elimapass" > src/main/resources/application-ci.properties
+          echo "spring.datasource.username=postgres" >> src/main/resources/application-ci.properties
+          echo "spring.datasource.password=elimapass-password" >> src/main/resources/application-ci.properties
+
       - name: Perform tests
-        run: mvn test
+        run: mvn test -Dspring.profiles.active=ci
 
       - name: Cache SonarQube packages
         uses: actions/cache@v4
@@ -53,7 +59,8 @@ jobs:
       - name: Build and analyze
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=fcuya13_eLimaPass-spring
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=fcuya13_eLimaPass-spring -Dspring.profiles.active=ci
 
 
 
