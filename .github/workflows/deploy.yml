@@ -96,15 +96,15 @@ jobs:
         run: |
           cd terraform
           terraform destroy \
-            -var="app_name=${{ env.APP_NAME }}" \
-            -var="db_username=${{ secrets.DB_USERNAME }}" \
-            -var="db_password=${{ secrets.DB_PASSWORD }}" \ 
-            -target aws_db_instance.postgres -auto-approve 
+          -var="app_name=${{ env.APP_NAME }}" \
+          -var="db_username=${{ secrets.DB_USERNAME }}" \
+          -var="db_password=${{ secrets.DB_PASSWORD }}" \
+          -target aws_db_instance.postgres -auto-approve 
           terraform destroy \
-            -var="app_name=${{ env.APP_NAME }}" \
-            -var="db_username=${{ secrets.DB_USERNAME }}" \
-            -var="db_password=${{ secrets.DB_PASSWORD }}" \ 
-            -target aws_ecs_cluster.main -auto-approve 
+          -var="app_name=${{ env.APP_NAME }}" \
+          -var="db_username=${{ secrets.DB_USERNAME }}" \
+          -var="db_password=${{ secrets.DB_PASSWORD }}" \
+          -target aws_ecs_cluster.main -auto-approve 
 
       - name: Terraform Apply
         run: |
