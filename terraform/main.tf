@@ -171,14 +171,15 @@ resource "aws_iam_instance_profile" "ecs_instance" {
 }
 resource "aws_launch_template" "ecs" {
   name_prefix   = "${var.app_name}-ecs-"
-  image_id      = "var.ecs_ami_id" # Use your AMI ID
+  image_id      = var.ecs_ami_id
   instance_type = "t2.micro"  # Use your instance type
 
   # If you had user data in your launch configuration
-  user_data = <<-EOF
+  user_data = base64encode(<<-EOF
                          #!/bin/bash
                          echo ECS_CLUSTER=${aws_ecs_cluster.main.name} >> /etc/ecs/ecs.config
                          EOF
+  )
 
   # Security group settings
   vpc_security_group_ids = [aws_security_group.ecs.id] # Replace with your security groups
@@ -232,6 +233,9 @@ resource "aws_ecs_task_definition" "app" {
   network_mode             = "bridge"
   requires_compatibilities = ["EC2"]
 
+  memory                   = "512"
+  cpu                      = "256"
+
   container_definitions = jsonencode([{
     name         = "${var.app_name}-container"
     image        = "${aws_ecr_repository.existing.repository_url}:latest"
@@ -248,7 +252,8 @@ resource "aws_ecs_task_definition" "app" {
       { name = "SPRING_DATASOURCE_USERNAME", value = var.db_username },
       { name = "SPRING_DATASOURCE_PASSWORD", value = var.db_password },
       { name = "SPRING_FLYWAY_LOCATIONS", value = "classpath:migrations" },
-      { name = "SPRING_PROFILES_ACTIVE", value = "prod" }
+      { name = "SPRING_PROFILES_ACTIVE", value = "prod" },
+      { name = "SPRING_DATASOURCE_SCHEMA", value = "elimapass"}
     ]
 
     logConfiguration = {
