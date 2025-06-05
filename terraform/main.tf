@@ -230,7 +230,7 @@ resource "aws_autoscaling_group" "ecs" {
 # ECS Task Definition
 resource "aws_ecs_task_definition" "app" {
   family                   = "${var.app_name}-task"
-  network_mode             = "bridge"
+  network_mode             = "host"
   requires_compatibilities = ["EC2"]
 
   memory                   = "512"
@@ -243,7 +243,6 @@ resource "aws_ecs_task_definition" "app" {
 
     portMappings = [{
       containerPort = var.container_port
-      hostPort      = 0 # Dynamic port mapping
       protocol      = "tcp"
     }]
 
