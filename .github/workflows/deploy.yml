@@ -110,10 +110,3 @@ jobs:
         run: |
           cd terraform
           terraform apply -auto-approve tfplan
-
-      - name: Update ECS Service
-        run: |
-          aws ecs update-service \
-            --cluster ${{ env.ECS_CLUSTER }} \
-            --service ${{ env.ECS_SERVICE }} \
-            --force-new-deployment
