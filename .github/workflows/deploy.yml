@@ -3,7 +3,7 @@ name: Build and Deploy
 on:
   workflow_call:
 
-inputs:
+secrets:
   AWS_ACCESS_KEY_ID:
     required: true
     type: string
@@ -51,8 +51,8 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          aws-access-key-id: ${{ inputs.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ inputs.AWS_SECRET_ACCESS_KEY }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
@@ -88,8 +88,8 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          aws-access-key-id: ${{ inputs.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ inputs.AWS_SECRET_ACCESS_KEY }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Terraform Init
@@ -105,9 +105,9 @@ jobs:
             -var="app_name=elimapass" \
             -var="ecr_repository_name=${{ env.ECR_REPOSITORY }}" \
             -var="image_tag=${{ needs.build-and-push.outputs.image-tag }}" \
-            -var="db_username=${{ inputs.DB_USERNAME }}" \
-            -var="db_password=${{ inputs.DB_PASSWORD }}" \
-            -var="db_schema=${{ inputs.DB_SCHEMA }}" \
+            -var="db_username=${{ secrets.DB_USERNAME }}" \
+            -var="db_password=${{ secrets.DB_PASSWORD }}" \
+            -var="db_schema=${{ secrets.DB_SCHEMA }}" \
             -out=tfplan
 
       - name: Terraform Apply
