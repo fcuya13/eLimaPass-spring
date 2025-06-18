@@ -42,11 +42,7 @@ jobs:
       - name: Build Spring Boot App
         run: mvn clean package -DskipTests
 
-      - name: Run Spring Boot app in background
-        uses: rbhadti94/apache-jmeter-action@v0.5.0
-        with:
-          testFilePath: jmeter/test.jmx
-          outputReportsFolder: reports/
+      - name: Run Spring Boot and Jmeter Test
         run: |
           apk add --no-cache openjdk17-jre wget unzip
 
@@ -58,15 +54,12 @@ jobs:
             --spring.datasource.url=jdbc:postgresql://postgres:5432/elimapass \
             --spring.datasource.username=testuser \
             --spring.datasource.password=testpass &
+          export SPRING_PID=$!
 
-          for i in {1..30}; do
-            if wget -qO- http://localhost:8080/elimapass/v1/actuator/health | grep UP; then
-              echo "Backend is UP"
-              break
-            fi
-            sleep 2
-          done
 
+          echo "Sleeping 10 seconds before running JMeter..."
+          sleep 10
+          
           ./apache-jmeter-${JMETER_VERSION}/bin/jmeter -n -t jmeter/test.jmx -l jmeter_log.log -e -f -o reports/ 
 
 
