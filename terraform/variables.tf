@@ -20,7 +20,6 @@ variable "aws_region" {
 variable "app_name" {
   description = "Name of the application"
   type        = string
-  default     = "elimapass"
 }
 
 variable "health_check_path" {

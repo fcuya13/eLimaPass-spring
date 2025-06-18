@@ -1,12 +1,7 @@
-resource "aws_ecr_repository" "app" {
-  name                 = var.app_name
-  image_tag_mutability = "MUTABLE"
+resource "aws_ecr_repository" "existing" {
+  name                 = "elimapass-spring"
 
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-
-  tags = {
-    Name = "${var.app_name}-repository"
+  lifecycle {
+    prevent_destroy = true
   }
 }

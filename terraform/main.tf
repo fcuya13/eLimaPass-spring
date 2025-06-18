@@ -1,3 +1,13 @@
+terraform {
+  backend "s3" {
+    bucket = "elimapass-tfstate"
+    key    = "terraform.tfstate"
+    region = "us-east-1"
+    encrypt = true
+  }
+}
+
+
 # VPC Configuration (Simplified - No NAT Gateway)
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
@@ -159,29 +169,46 @@ resource "aws_iam_instance_profile" "ecs_instance" {
   name = "${var.app_name}-ecs-instance-profile"
   role = aws_iam_role.ecs_instance_role.name
 }
+resource "aws_launch_template" "ecs" {
+  name_prefix   = "${var.app_name}-ecs-"
+  image_id      = var.ecs_ami_id
+  instance_type = "t2.micro"  # Use your instance type
 
-# Launch Configuration for EC2 instances
-resource "aws_launch_configuration" "ecs" {
-  name_prefix          = "${var.app_name}-ecs-"
-  image_id             = var.ecs_ami_id # Amazon ECS-optimized AMI ID
-  instance_type        = "t2.micro"     # Free tier eligible
-  iam_instance_profile = aws_iam_instance_profile.ecs_instance.name
-  security_groups      = [aws_security_group.ecs.id]
-  user_data            = <<-EOF
+  # If you had user data in your launch configuration
+  user_data = base64encode(<<-EOF
                          #!/bin/bash
                          echo ECS_CLUSTER=${aws_ecs_cluster.main.name} >> /etc/ecs/ecs.config
                          EOF
+  )
+
+  # Security group settings
+  vpc_security_group_ids = [aws_security_group.ecs.id] # Replace with your security groups
+
+  # IAM instance profile if you had one
+  iam_instance_profile {
+    name = aws_iam_instance_profile.ecs_instance.name
+  }
 
   lifecycle {
     create_before_destroy = true
   }
+  tag_specifications {
+    resource_type = "instance"
+    tags = {
+      Name = "elimapass-spring-ecs-instance"
+    }
+  }
 }
+
 
 # Auto Scaling Group for ECS Instances
 resource "aws_autoscaling_group" "ecs" {
   name                 = "${var.app_name}-ecs-asg"
   vpc_zone_identifier  = [aws_subnet.public_1.id, aws_subnet.public_2.id]
-  launch_configuration = aws_launch_configuration.ecs.name
+  launch_template {
+    id      = aws_launch_template.ecs.id
+    version = "$Latest"
+  }
 
   min_size             = 1
   max_size             = 1
@@ -203,17 +230,19 @@ resource "aws_autoscaling_group" "ecs" {
 # ECS Task Definition
 resource "aws_ecs_task_definition" "app" {
   family                   = "${var.app_name}-task"
-  network_mode             = "bridge"
+  network_mode             = "host"
   requires_compatibilities = ["EC2"]
+
+  memory                   = "512"
+  cpu                      = "256"
 
   container_definitions = jsonencode([{
     name         = "${var.app_name}-container"
-    image        = "${aws_ecr_repository.app.repository_url}:latest"
+    image        = "${aws_ecr_repository.existing.repository_url}:latest"
     essential    = true
 
     portMappings = [{
       containerPort = var.container_port
-      hostPort      = 0 # Dynamic port mapping
       protocol      = "tcp"
     }]
 
@@ -222,7 +251,8 @@ resource "aws_ecs_task_definition" "app" {
       { name = "SPRING_DATASOURCE_USERNAME", value = var.db_username },
       { name = "SPRING_DATASOURCE_PASSWORD", value = var.db_password },
       { name = "SPRING_FLYWAY_LOCATIONS", value = "classpath:migrations" },
-      { name = "SPRING_PROFILES_ACTIVE", value = "prod" }
+      { name = "SPRING_PROFILES_ACTIVE", value = "prod" },
+      { name = "SPRING_DATASOURCE_SCHEMA", value = "elimapass"}
     ]
 
     logConfiguration = {
