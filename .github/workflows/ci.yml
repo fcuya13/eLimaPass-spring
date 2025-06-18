@@ -6,15 +6,8 @@ on:
 jobs:
   perform-tests:
     uses: ./.github/workflows/test.yml
-    secrets:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    secrets: inherit
   build-and-deploy:
     needs: perform-tests
     uses: ./.github/workflows/deploy.yml
-    secrets:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      DB_USERNAME: ${{ secrets.DB_USERNAME }}
-      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-      DB_SCHEMA: ${{ secrets.DB_SCHEMA }}
+    secrets: inherit

@@ -9,14 +9,6 @@ on:
       - develop
   workflow_call:
 
-secrets:
-  SONAR_TOKEN:
-    required: true
-    type: string
-  GITHUB_TOKEN:
-    required: true
-    type: string
-
 jobs:
   unit-test-and-quality:
     runs-on: ubuntu-latest

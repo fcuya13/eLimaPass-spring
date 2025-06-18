@@ -3,23 +3,6 @@ name: Build and Deploy
 on:
   workflow_call:
 
-secrets:
-  AWS_ACCESS_KEY_ID:
-    required: true
-    type: string
-  AWS_SECRET_ACCESS_KEY:
-    required: true
-    type: string
-  DB_USERNAME:
-    required: true
-    type: string
-  DB_PASSWORD:
-    required: true
-    type: string
-  DB_SCHEMA:
-    required: true
-    type: string
-
 env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: elimapass-spring
