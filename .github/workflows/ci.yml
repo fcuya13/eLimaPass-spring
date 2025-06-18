@@ -1,0 +1,10 @@
+name: ci.yml
+on:
+  push:
+    - release
+jobs:
+  perform-tests:
+    uses: ./.github/workflows/test.yml
+  build-and-deploy:
+    needs: perform-tests
+    uses: ./.github/workflows/deploy.yml

@@ -1,11 +1,7 @@
 name: Build and Deploy
 
 on:
-  workflow_run:
-    workflows: [ "Java CI with Maven" ]
-    branches: [ release ]
-    types:
-      - completed
+  workflow_call:
 
 env:
   AWS_REGION: us-east-1
