@@ -57,9 +57,14 @@ jobs:
           export SPRING_PID=$!
 
 
-          echo "Sleeping 10 seconds before running JMeter..."
-          sleep 10
+          echo "Sleeping 15 seconds before running JMeter..."
+          sleep 15
           
           ./apache-jmeter-${JMETER_VERSION}/bin/jmeter -n -t jmeter/test.jmx -l jmeter_log.log -e -f -o reports/ 
+            
 
-
+      - name: Upload Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: jmeter-test-results
+          path: reports/
