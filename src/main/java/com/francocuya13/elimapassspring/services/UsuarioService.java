@@ -4,10 +4,15 @@ import com.francocuya13.elimapassspring.models.Tarjeta;
 import com.francocuya13.elimapassspring.models.Usuario;
 import com.francocuya13.elimapassspring.repositories.TarjetaRepository;
 import com.francocuya13.elimapassspring.repositories.UsuarioRepository;
+import com.francocuya13.elimapassspring.responses.SignUpRequest;
+import com.francocuya13.elimapassspring.responses.SignUpResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Random;
+import java.util.UUID;
 
 @Service
 public class UsuarioService {
@@ -17,43 +22,57 @@ public class UsuarioService {
 
     @Autowired
     private TarjetaRepository tarjetaRepository;
-
+    private final Random random = new Random();
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    // Crear un nuevo usuario y asociarle una tarjeta
     @Transactional
-    public Usuario createUser(Usuario usuario, String numeroTarjeta) {
-        usuario.setPassword(passwordEncoder.encode(usuario.getPassword())); // Encriptar contraseña
-        Usuario savedUser = usuarioRepository.save(usuario);
-
-        if (numeroTarjeta == null) {
-            // Si no se proporciona una tarjeta, se crea una nueva tarjeta con saldo 0
-            Tarjeta tarjeta = new Tarjeta();
-            tarjeta.setCodigo(String.valueOf((int) (Math.random() * 1000000000))); // Generar código de tarjeta aleatorio
-            tarjeta.setUsuario(savedUser);
-            tarjeta.setSaldo(0);
-            tarjeta.setTipo(0); // Tipo 0 (puedes cambiar la lógica según tus necesidades)
-            tarjeta.setLimite(0);
-            tarjetaRepository.save(tarjeta);
-        } else {
-            // Si se proporciona un número de tarjeta, lo asociamos al usuario
-            Tarjeta tarjeta = new Tarjeta();
-            tarjeta.setCodigo(numeroTarjeta);
-            tarjeta.setUsuario(savedUser);
-            tarjeta.setSaldo(10); // Saldo inicial de 10
-            tarjeta.setTipo(0);
-            tarjeta.setLimite(0);
-            tarjetaRepository.save(tarjeta);
+    public SignUpResponse registerUser(SignUpRequest request) {
+        if (usuarioRepository.findByDni(request.getDni()).isPresent()) {
+            throw new IllegalArgumentException("DNI ya registrado");
+        }
+        if (usuarioRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Email ya registrado");
         }
 
-        return savedUser;
+        Usuario usuario = new Usuario();
+        usuario.setDni(request.getDni());
+        usuario.setNombres(request.getNombres());
+        usuario.setApellidos(request.getApellidos());
+        usuario.setEmail(request.getEmail());
+        usuario.setPassword(passwordEncoder.encode(request.getPassword()));
+        usuarioRepository.save(usuario);
+
+        String numTarjeta = request.getNumTarjeta();
+        Tarjeta tarjeta = new Tarjeta();
+
+        if (numTarjeta == null || numTarjeta.isEmpty()) {
+            String codigo = String.valueOf(1000000000L + random.nextInt(900000000));
+            tarjeta.setCodigo(codigo);
+            tarjeta.setSaldo(0.0);
+            tarjeta.setTipo(0);
+            tarjeta.setLimite(0.0);
+            tarjeta.setUsuario(usuario);
+        } else {
+            if (numTarjeta.length() != 10) {
+                throw new IllegalArgumentException("Numero de tarjeta invalida");
+            }
+            tarjeta.setCodigo(numTarjeta);
+            tarjeta.setSaldo(10.0);
+            tarjeta.setTipo(0);
+            tarjeta.setLimite(0.0);
+            tarjeta.setUsuario(usuario);
+        }
+        tarjetaRepository.save(tarjeta);
+
+        return new SignUpResponse(usuario.getId().toString(), usuario.getNombres());
     }
 
     public Usuario getUserByDni(String dni) {
-        return usuarioRepository.findByDni(dni);
+        return usuarioRepository.findByDni(dni).isPresent() ? usuarioRepository.findByDni(dni).get() : null;
     }
 
     public Usuario getUserByEmail(String email) {
-        return usuarioRepository.findByEmail(email);
+        return usuarioRepository.findByEmail(email).isPresent() ? usuarioRepository.findByEmail(email).get() : null;
     }
 }
+

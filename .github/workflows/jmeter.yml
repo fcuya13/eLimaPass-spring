@@ -1,0 +1,64 @@
+name: JMeter Performance Test
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  jmeter-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:13
+        ports: [5432:5432]
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: testdb
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Esperar a que Postgres esté listo
+        run: |
+          for i in {1..30}; do
+            pg_isready -h localhost -U testuser && break
+            sleep 2
+          done
+
+      - name: Build Spring Boot App
+        run: ./mvnw clean package -DskipTests
+
+      - name: Levantar backend Spring Boot
+        run: |
+          nohup java -jar target/*.jar \
+            --spring.datasource.url=jdbc:postgresql://localhost:5432/testdb \
+            --spring.datasource.username=testuser \
+            --spring.datasource.password=testpass &
+
+      - name: Esperar a que el backend esté listo
+        run: |
+          for i in {1..30}; do
+            if curl -s http://localhost:8080/actuator/health | grep UP; then
+              echo "Backend listo"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "El backend no está disponible en localhost:8080"
+          exit 1
+
+      - name: Instalar JMeter
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jmeter
+
+      - name: Ejecutar pruebas de rendimiento JMeter
+        run: |
+          jmeter -n -t jmeter/test.jmx -l resultados.xml

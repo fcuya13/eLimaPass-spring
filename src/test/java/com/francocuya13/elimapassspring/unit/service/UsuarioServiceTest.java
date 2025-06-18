@@ -4,12 +4,10 @@ import com.francocuya13.elimapassspring.models.Usuario;
 import com.francocuya13.elimapassspring.repositories.TarjetaRepository;
 import com.francocuya13.elimapassspring.repositories.UsuarioRepository;
 import com.francocuya13.elimapassspring.services.UsuarioService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.UUID;
 
@@ -98,7 +96,7 @@ public class UsuarioServiceTest {
         Usuario expectedUsuario = new Usuario();
         expectedUsuario.setDni(dni);
 
-        when(usuarioRepository.findByDni(dni)).thenReturn(expectedUsuario);
+        when(usuarioRepository.findByDni(dni).get()).thenReturn(expectedUsuario);
 
         // Act
         Usuario result = usuarioService.getUserByDni(dni);
@@ -115,7 +113,7 @@ public class UsuarioServiceTest {
         Usuario expectedUsuario = new Usuario();
         expectedUsuario.setEmail(email);
 
-        when(usuarioRepository.findByEmail(email)).thenReturn(expectedUsuario);
+        when(usuarioRepository.findByEmail(email).get()).thenReturn(expectedUsuario);
 
         // Act
         Usuario result = usuarioService.getUserByEmail(email);

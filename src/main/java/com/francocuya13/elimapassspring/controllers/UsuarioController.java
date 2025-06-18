@@ -4,6 +4,8 @@ import com.francocuya13.elimapassspring.models.Tarjeta;
 import com.francocuya13.elimapassspring.models.Usuario;
 import com.francocuya13.elimapassspring.repositories.TarjetaRepository;
 import com.francocuya13.elimapassspring.responses.LoginResponse;
+import com.francocuya13.elimapassspring.responses.SignUpRequest;
+import com.francocuya13.elimapassspring.responses.SignUpResponse;
 import com.francocuya13.elimapassspring.services.UsuarioService;
 import lombok.Getter;
 import lombok.Setter;
@@ -22,12 +24,15 @@ public class UsuarioController {
     @Autowired
     private TarjetaRepository tarjetaRepository;
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public Usuario createUser(@RequestBody Usuario usuario, @RequestParam(required = false) String numTarjeta) {
-        return usuarioService.createUser(usuario, numTarjeta);
+    @PostMapping("/register")
+    public ResponseEntity<?> registerUser(@RequestBody SignUpRequest request) {
+        try {
+            SignUpResponse response = usuarioService.registerUser(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+        }
     }
-
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         Usuario usuario = usuarioService.getUserByDni(loginRequest.getDni());
