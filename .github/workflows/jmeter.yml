@@ -13,7 +13,7 @@ jobs:
         env:
           POSTGRES_USER: testuser
           POSTGRES_PASSWORD: testpass
-          POSTGRES_DB: testdb
+          POSTGRES_DB: elimapass
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -22,6 +22,12 @@ jobs:
 
     container:
       image: maven:3.9-eclipse-temurin-21-alpine
+
+    env:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/elimapass
+      SPRING_DATASOURCE_USERNAME: testuser
+      SPRING_DATASOURCE_PASSWORD: testpass
+      SPRING_JPA_HIBERNATE_DEFAULT_SCHEMA: elimapass
 
     steps:
       - uses: actions/checkout@v4
@@ -39,7 +45,7 @@ jobs:
       - name: Run Spring Boot app in background
         run: |
           java -jar target/*.jar \
-            --spring.datasource.url=jdbc:postgresql://postgres:5432/testdb \
+            --spring.datasource.url=jdbc:postgresql://postgres:5432/elimapass \
             --spring.datasource.username=testuser \
             --spring.datasource.password=testpass &
           sleep 15
