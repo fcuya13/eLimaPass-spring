@@ -48,24 +48,21 @@ jobs:
             --spring.datasource.url=jdbc:postgresql://postgres:5432/elimapass \
             --spring.datasource.username=testuser \
             --spring.datasource.password=testpass &
-          sleep 15
+          sleep 5
 
-      - name: Wait until Spring Boot is UP
-        run: |
-          for i in {1..30}; do
-            if wget -qO- http://localhost:8080/actuator/health | grep UP; then
-              echo "Backend is UP"
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "Spring Boot not available"
-          exit 1
 
       - name: Install JMeter
         run: |
           apk add --no-cache jmeter
 
-      - name: Run JMeter performance tests
-        run: |
-          jmeter -n -t jmeter/mi_escenario.jmx -l resultados.jtl
+      - name: Run JMeter Tests
+        uses: rbhadti94/apache-jmeter-action@v0.5.0
+        with:
+          testFilePath: jmeter/test.jmx
+          outputReportsFolder: reports/
+
+      - name: Upload Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: jmeter-test-results
+          path: reports/
