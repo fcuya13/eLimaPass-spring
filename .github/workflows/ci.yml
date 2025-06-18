@@ -1,7 +1,8 @@
-name: ci.yml
+name: Continuous Integration
 on:
   push:
-    - release
+    branches:
+      - release
 jobs:
   perform-tests:
     uses: ./.github/workflows/test.yml
