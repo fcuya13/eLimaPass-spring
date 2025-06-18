@@ -6,24 +6,25 @@ import com.francocuya13.elimapassspring.repositories.TarjetaRepository;
 import com.francocuya13.elimapassspring.repositories.UsuarioRepository;
 import com.francocuya13.elimapassspring.responses.SignUpRequest;
 import com.francocuya13.elimapassspring.responses.SignUpResponse;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Random;
-import java.util.UUID;
 
 @Service
 public class UsuarioService {
 
-    @Autowired
-    private UsuarioRepository usuarioRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final TarjetaRepository tarjetaRepository;
 
-    @Autowired
-    private TarjetaRepository tarjetaRepository;
     private final Random random = new Random();
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+    public UsuarioService(UsuarioRepository usuarioRepository, TarjetaRepository tarjetaRepository) {
+        this.usuarioRepository = usuarioRepository;
+        this.tarjetaRepository = tarjetaRepository;
+    }
 
     @Transactional
     public SignUpResponse registerUser(SignUpRequest request) {
@@ -40,7 +41,7 @@ public class UsuarioService {
         usuario.setApellidos(request.getApellidos());
         usuario.setEmail(request.getEmail());
         usuario.setPassword(passwordEncoder.encode(request.getPassword()));
-        usuarioRepository.save(usuario);
+        usuario = usuarioRepository.save(usuario);
 
         String numTarjeta = request.getNumTarjeta();
         Tarjeta tarjeta = new Tarjeta();
@@ -49,19 +50,16 @@ public class UsuarioService {
             String codigo = String.valueOf(1000000000L + random.nextInt(900000000));
             tarjeta.setCodigo(codigo);
             tarjeta.setSaldo(0.0);
-            tarjeta.setTipo(0);
-            tarjeta.setLimite(0.0);
-            tarjeta.setUsuario(usuario);
         } else {
             if (numTarjeta.length() != 10) {
                 throw new IllegalArgumentException("Numero de tarjeta invalida");
             }
             tarjeta.setCodigo(numTarjeta);
             tarjeta.setSaldo(10.0);
-            tarjeta.setTipo(0);
-            tarjeta.setLimite(0.0);
-            tarjeta.setUsuario(usuario);
         }
+        tarjeta.setTipo(0);
+        tarjeta.setLimite(0.0);
+        tarjeta.setUsuario(usuario);
         tarjetaRepository.save(tarjeta);
 
         return new SignUpResponse(usuario.getId().toString(), usuario.getNombres());

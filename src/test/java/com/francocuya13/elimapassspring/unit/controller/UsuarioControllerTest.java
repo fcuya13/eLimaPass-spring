@@ -4,17 +4,18 @@ import com.francocuya13.elimapassspring.controllers.UsuarioController;
 import com.francocuya13.elimapassspring.models.Tarjeta;
 import com.francocuya13.elimapassspring.models.Usuario;
 import com.francocuya13.elimapassspring.repositories.TarjetaRepository;
+import com.francocuya13.elimapassspring.repositories.UsuarioRepository;
 import com.francocuya13.elimapassspring.responses.LoginResponse;
 import com.francocuya13.elimapassspring.services.UsuarioService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -23,40 +24,22 @@ import static org.mockito.Mockito.*;
 
 class UsuarioControllerTest {
 
+
     @Mock
-    private UsuarioService usuarioService;
+    private UsuarioRepository usuarioRepository;
 
     @Mock
     private TarjetaRepository tarjetaRepository;
 
-    @InjectMocks
+    private UsuarioService usuarioService;
+
     private UsuarioController usuarioController;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-    }
-
-    @Test
-    void createUser_ShouldCallServiceAndReturnCreatedUser() {
-        // Arrange
-        Usuario usuario = new Usuario();
-        usuario.setNombres("Test");
-        usuario.setApellidos("User");
-        usuario.setEmail("test@example.com");
-        usuario.setDni("12345678");
-        usuario.setPassword("password123");
-
-        String numTarjeta = "123456789";
-
-        when(usuarioService.createUser(any(Usuario.class), eq(numTarjeta))).thenReturn(usuario);
-
-        // Act
-        Usuario result = usuarioController.createUser(usuario, numTarjeta);
-
-        // Assert
-        assertEquals(usuario, result);
-        verify(usuarioService).createUser(usuario, numTarjeta);
+        usuarioService = new UsuarioService(usuarioRepository, tarjetaRepository);
+        usuarioController = new UsuarioController(usuarioService, tarjetaRepository);
     }
 
     @Test
@@ -78,7 +61,7 @@ class UsuarioControllerTest {
         tarjeta.setCodigo("123456789");
         tarjeta.setTipo(0);
 
-        when(usuarioService.getUserByDni("12345678")).thenReturn(usuario);
+        when(usuarioRepository.findByDni("12345678")).thenReturn(Optional.of(usuario));
         when(tarjetaRepository.findByUsuario(usuario)).thenReturn(tarjeta);
 
         // Act
@@ -105,7 +88,7 @@ class UsuarioControllerTest {
         usuario.setDni("12345678");
         usuario.setPassword("encoded_password");
 
-        when(usuarioService.getUserByDni("12345678")).thenReturn(usuario);
+        when(usuarioRepository.findByDni("12345678")).thenReturn(Optional.of(usuario));
 
         // Mockeamos checkPassword para que retorne false
 
@@ -135,7 +118,7 @@ class UsuarioControllerTest {
         loginRequest.setDni("nonexistent");
         loginRequest.setPassword("password123");
 
-        when(usuarioService.getUserByDni("nonexistent")).thenReturn(null);
+        when(usuarioRepository.findByDni("nonexistent")).thenReturn(Optional.empty());
 
         // Act
         ResponseEntity<?> response = usuarioController.login(loginRequest);
