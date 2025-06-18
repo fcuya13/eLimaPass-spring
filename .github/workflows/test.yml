@@ -8,7 +8,7 @@ on:
     types: [opened, synchronize, reopened]
 
 jobs:
-  test:
+  unit-test-and-quality:
     runs-on: ubuntu-latest
     container: maven:3.9-eclipse-temurin-21-alpine
 
@@ -41,3 +41,61 @@ jobs:
           -Dflyway.skip=true 
 
 
+  performance-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:13
+        ports: [ 5432:5432 ]
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: elimapass
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    container:
+      image: maven:3.9-eclipse-temurin-21-alpine
+
+    env:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/elimapass
+      SPRING_DATASOURCE_USERNAME: testuser
+      SPRING_DATASOURCE_PASSWORD: testpass
+      SPRING_JPA_HIBERNATE_DEFAULT_SCHEMA: elimapass
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Spring Boot App
+        run: mvn clean package -DskipTests
+
+      - name: Run Spring Boot and Jmeter Test
+        run: |
+          apk add --no-cache openjdk17-jre wget unzip
+
+          JMETER_VERSION=5.6.3
+          wget https://dlcdn.apache.org//jmeter/binaries/apache-jmeter-${JMETER_VERSION}.zip
+          unzip apache-jmeter-${JMETER_VERSION}.zip
+
+          java -jar target/*.jar \
+            --spring.datasource.url=jdbc:postgresql://postgres:5432/elimapass \
+            --spring.datasource.username=testuser \
+            --spring.datasource.password=testpass &
+          export SPRING_PID=$!
+
+
+          echo "Sleeping 15 seconds before running JMeter..."
+          sleep 15
+
+          ./apache-jmeter-${JMETER_VERSION}/bin/jmeter -n -t jmeter/test.jmx -l jmeter_log.log -e -f -o reports/ 
+
+
+      - name: Upload Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: jmeter-test-results
+          path: reports/
