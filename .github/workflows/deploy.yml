@@ -1,10 +1,7 @@
 name: Build and Deploy
 
 on:
-  push:
-    branches:
-      - master
-  workflow_dispatch:
+  workflow_call:
 
 env:
   AWS_REGION: us-east-1
@@ -83,15 +80,6 @@ jobs:
           cd terraform
           terraform init
 
-      - name: Terraform Plan
-        run: |
-          cd terraform
-          terraform plan \
-            -var="app_name=${{ env.APP_NAME }}" \
-            -var="db_username=${{ secrets.DB_USERNAME }}" \
-            -var="db_password=${{ secrets.DB_PASSWORD }}" \
-            -out=tfplan
-
       - name: Terraform destroy
         run: |
           cd terraform
@@ -106,7 +94,16 @@ jobs:
           -var="db_password=${{ secrets.DB_PASSWORD }}" \
           -target aws_ecs_cluster.main -auto-approve 
 
-      - name: Terraform Apply
-        run: |
-          cd terraform
-          terraform apply -auto-approve tfplan
+      - name: Terraform plan & apply
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          command: |
+              cd terraform
+              terraform plan \
+                -var="app_name=${{ env.APP_NAME }}" \
+                -var="db_username=${{ secrets.DB_USERNAME }}" \
+                -var="db_password=${{ secrets.DB_PASSWORD }}" \
+                -out=tfplan
+              terraform apply -auto-approve tfplan
