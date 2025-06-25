@@ -1,0 +1,16 @@
+name: Continuous Delivery
+
+on:
+  push:
+    branches:
+      - release
+  workflow_call:
+
+jobs:
+  perform-tests-and-integration:
+    uses: ./.github/workflows/integration.yml
+    secrets: inherit
+
+  performance-tests:
+    uses: ./.github/workflows/performance.yml
+    secrets: inherit

@@ -1,51 +1,10 @@
-name: Perform Tests
-
+name: performance.yml
 on:
-  pull_request:
-    branches:
-      - release
-  push:
-    branches:
-      - develop
   workflow_call:
 
 jobs:
-  unit-test-and-quality:
-    runs-on: ubuntu-latest
-    container: maven:3.9-eclipse-temurin-21-alpine
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Perform tests
-        run: mvn test
-
-      - name: Cache SonarQube packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
-
-      - name: Cache Maven packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-
-      - name: Build and analyze
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=fcuya13_eLimaPass-spring \
-          -Dflyway.skip=true 
-
-
   performance-test:
     runs-on: ubuntu-latest
-    needs: unit-test-and-quality
 
     services:
       postgres:
@@ -78,7 +37,7 @@ jobs:
 
       - name: Run Spring Boot and Jmeter Test
         run: |
-          apk add --no-cache openjdk17-jre wget unzip
+          apk add --no-cache wget unzip
 
           JMETER_VERSION=5.6.3
           wget https://dlcdn.apache.org//jmeter/binaries/apache-jmeter-${JMETER_VERSION}.zip
@@ -90,11 +49,10 @@ jobs:
             --spring.datasource.password=testpass &
           export SPRING_PID=$!
 
-
-          echo "Sleeping 15 seconds before running JMeter..."
+          echo "Sleeping 15 seconds before running Tests..."
           sleep 15
 
-          ./apache-jmeter-${JMETER_VERSION}/bin/jmeter -n -t jmeter/test.jmx -l jmeter_log.log -e -f -o reports/ 
+          ./apache-jmeter-${JMETER_VERSION}/bin/jmeter -n -t tests/test.jmx -l jmeter_log.log -e -f -o reports/ 
 
 
       - name: Upload Results
