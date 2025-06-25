@@ -1,9 +1,21 @@
-name: integration.yml
+name: Continuous Integration
+
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches:
+      - release
+  workflow_call:
 
 jobs:
-  integration-test:
+  perform-tests:
+    uses: ./.github/workflows/jobs/commit.yml
+    secrets: inherit
+
+  integration-tests:
+    name: Integration Tests
     runs-on: ubuntu-latest
 
     services:
@@ -32,16 +44,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        run: apk add --no-cache nodejs npm
-
-      - name: Install newman
-        run: npm install -g newman y npm install -g newman-reporter-html
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
 
       - name: Build Spring Boot App
         run: mvn clean package -DskipTests
 
-      - name: Run Spring Boot and Jmeter Test
+      - name: Setup Node.js
+        run: apk add --no-cache nodejs npm
+
+      - name: Install newman
+        run: npm install -g newman newman-reporter-html
+
+      - name: Run Integration Tests
         run: |
           java -jar target/*.jar \
             --spring.datasource.url=jdbc:postgresql://postgres:5432/elimapass \
@@ -49,13 +68,50 @@ jobs:
             --spring.datasource.password=testpass &
           export SPRING_PID=$!
           
-          echo "Sleeping 15 seconds before running Tests..."
+          echo "Waiting for application to start..."
           sleep 15
           
-          newman run tests/eLimaPass-Spring.postman_collection.json -r cli,html --reporter-html-export reports/report.html
+          newman run tests/eLimaPass-Spring.postman_collection.json \
+            -r cli,html --reporter-html-export reports/integration-report.html
 
-      - name: Upload Results
+      - name: Upload Integration Test Results
         uses: actions/upload-artifact@v4
         with:
           name: integration-test-results
           path: reports/
+
+  code-quality:
+    name: Code Quality Analysis
+    runs-on: ubuntu-latest
+    container: maven:3.9-eclipse-temurin-21-alpine
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Cache SonarQube packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Run Tests for Coverage
+        run: mvn test
+
+      - name: Code Quality Analysis with SonarQube
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -Dsonar.projectKey=fcuya13_eLimaPass-spring \
+            -Dflyway.skip=true
