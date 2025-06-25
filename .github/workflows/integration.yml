@@ -11,7 +11,7 @@ on:
 
 jobs:
   perform-tests:
-    uses: ./.github/workflows/jobs/commit.yml
+    uses: ./.github/workflows/commit.yml
     secrets: inherit
 
   integration-tests:
