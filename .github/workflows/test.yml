@@ -78,7 +78,7 @@ jobs:
 
       - name: Run Spring Boot and Jmeter Test
         run: |
-          apk add --no-cache openjdk17-jre wget unzip
+          apk add --no-cache wget unzip
 
           JMETER_VERSION=5.6.3
           wget https://dlcdn.apache.org//jmeter/binaries/apache-jmeter-${JMETER_VERSION}.zip
@@ -90,8 +90,7 @@ jobs:
             --spring.datasource.password=testpass &
           export SPRING_PID=$!
 
-
-          echo "Sleeping 15 seconds before running JMeter..."
+          echo "Sleeping 15 seconds before running Tests..."
           sleep 15
 
           ./apache-jmeter-${JMETER_VERSION}/bin/jmeter -n -t tests/test.jmx -l jmeter_log.log -e -f -o reports/ 
