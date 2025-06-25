@@ -1,11 +1,13 @@
-name: Java CI with Maven
+name: Perform Tests
 
 on:
+  pull_request:
+    branches:
+      - release
   push:
     branches:
       - develop
-  pull_request:
-    types: [opened, synchronize, reopened]
+  workflow_call:
 
 jobs:
   unit-test-and-quality:

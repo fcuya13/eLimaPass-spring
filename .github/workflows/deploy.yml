@@ -1,14 +1,11 @@
 name: Build and Deploy
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+  workflow_call:
 
 env:
   AWS_REGION: us-east-1
-  ECR_REPOSITORY: elimapass-spring
+  APP_NAME: elimapass-spring
   ECS_SERVICE: elimapass-service
   ECS_CLUSTER: elimapass-cluster
   TERRAFORM_VERSION: 1.5.0
@@ -51,10 +48,10 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           IMAGE_TAG=$(echo ${{ github.sha }} | cut -c1-8)
-          REPOSITORY_URI=$ECR_REGISTRY/$ECR_REPOSITORY
-          docker build -t $REPOSITORY_URI:$IMAGE_TAG .
-          docker push $REPOSITORY_URI:$IMAGE_TAG
-          echo "image-tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          REPOSITORY_URI=$ECR_REGISTRY/$APP_NAME
+          docker build -t $REPOSITORY_URI:latest .
+          docker push $REPOSITORY_URI:latest
+          echo "image-tag=latest" >> $GITHUB_OUTPUT
           echo "repository-uri=$REPOSITORY_URI" >> $GITHUB_ENV
 
   deploy-infrastructure:
@@ -83,32 +80,30 @@ jobs:
           cd terraform
           terraform init
 
-      - name: Terraform Plan
+      - name: Terraform destroy
         run: |
           cd terraform
-          terraform plan \
-            -var="region=${{ env.AWS_REGION }}" \
-            -var="app_name=elimapass" \
-            -var="ecr_repository_name=${{ env.ECR_REPOSITORY }}" \
-            -var="image_tag=${{ needs.build-and-push.outputs.image-tag }}" \
-            -var="db_username=${{ secrets.DB_USERNAME }}" \
-            -var="db_password=${{ secrets.DB_PASSWORD }}" \
-            -var="db_schema=${{ secrets.DB_SCHEMA }}" \
-            -out=tfplan
+          terraform destroy \
+          -var="app_name=${{ env.APP_NAME }}" \
+          -var="db_username=${{ secrets.DB_USERNAME }}" \
+          -var="db_password=${{ secrets.DB_PASSWORD }}" \
+          -target aws_db_instance.postgres -auto-approve 
+          terraform destroy \
+          -var="app_name=${{ env.APP_NAME }}" \
+          -var="db_username=${{ secrets.DB_USERNAME }}" \
+          -var="db_password=${{ secrets.DB_PASSWORD }}" \
+          -target aws_ecs_cluster.main -auto-approve 
 
-      - name: Terraform Apply
-        run: |
-          cd terraform
-          terraform apply -auto-approve tfplan
-
-      - name: Update ECS Service
-        run: |
-          aws ecs update-service \
-            --cluster ${{ env.ECS_CLUSTER }} \
-            --service ${{ env.ECS_SERVICE }} \
-            --force-new-deployment
-
-      - name: Output Load Balancer URL
-        run: |
-          cd terraform
-          echo "Load Balancer URL: $(terraform output alb_dns_name)"
+      - name: Terraform plan & apply
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          command: |
+              cd terraform
+              terraform plan \
+                -var="app_name=${{ env.APP_NAME }}" \
+                -var="db_username=${{ secrets.DB_USERNAME }}" \
+                -var="db_password=${{ secrets.DB_PASSWORD }}" \
+                -out=tfplan
+              terraform apply -auto-approve tfplan

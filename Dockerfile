@@ -21,6 +21,7 @@ WORKDIR /app
 
 # Copy the built JAR file
 COPY --from=build /workspace/app/target/*.jar app.jar
+EXPOSE 8080
 
 # Run the application
 ENTRYPOINT ["java","-jar","/app/app.jar"]

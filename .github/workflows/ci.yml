@@ -1,0 +1,13 @@
+name: Continuous Integration
+on:
+  push:
+    branches:
+      - release
+jobs:
+  perform-tests:
+    uses: ./.github/workflows/test.yml
+    secrets: inherit
+  build-and-deploy:
+    needs: perform-tests
+    uses: ./.github/workflows/deploy.yml
+    secrets: inherit
