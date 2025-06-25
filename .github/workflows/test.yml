@@ -94,7 +94,7 @@ jobs:
           echo "Sleeping 15 seconds before running JMeter..."
           sleep 15
 
-          ./apache-jmeter-${JMETER_VERSION}/bin/jmeter -n -t jmeter/test.jmx -l jmeter_log.log -e -f -o reports/ 
+          ./apache-jmeter-${JMETER_VERSION}/bin/jmeter -n -t tests/test.jmx -l jmeter_log.log -e -f -o reports/ 
 
 
       - name: Upload Results
