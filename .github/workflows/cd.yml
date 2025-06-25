@@ -1,4 +1,4 @@
-name: cd.yml
+name: Continuous Deployment
 on:
   push:
     branches:
@@ -11,5 +11,5 @@ jobs:
 
   deploy:
     needs: delivery
-    uses: ./.github/workflows/jobs/deploy.yml
+    uses: ./.github/workflows/deploy.yml
     secrets: inherit
