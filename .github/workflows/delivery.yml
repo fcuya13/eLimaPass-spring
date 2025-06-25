@@ -12,6 +12,5 @@ jobs:
     secrets: inherit
 
   performance-tests:
-    needs: perform-tests-and-integration
-    name: Performance
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/performance.yml
+    secrets: inherit
