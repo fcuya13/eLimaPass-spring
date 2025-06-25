@@ -12,5 +12,6 @@ jobs:
     secrets: inherit
 
   performance-tests:
+    needs: perform-tests-and-integration
     uses: ./.github/workflows/performance.yml
     secrets: inherit
