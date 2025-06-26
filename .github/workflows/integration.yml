@@ -1,0 +1,117 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches:
+      - release
+  workflow_call:
+
+jobs:
+  perform-tests:
+    uses: ./.github/workflows/commit.yml
+    secrets: inherit
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:13
+        ports: [ 5432:5432 ]
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: elimapass
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    container:
+      image: maven:3.9-eclipse-temurin-21-alpine
+
+    env:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/elimapass
+      SPRING_DATASOURCE_USERNAME: testuser
+      SPRING_DATASOURCE_PASSWORD: testpass
+      SPRING_JPA_HIBERNATE_DEFAULT_SCHEMA: elimapass
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Build Spring Boot App
+        run: mvn clean package -DskipTests
+
+      - name: Setup Node.js
+        run: apk add --no-cache nodejs npm
+
+      - name: Install newman
+        run: npm install -g newman newman-reporter-html
+
+      - name: Run Integration Tests
+        run: |
+          java -jar target/*.jar \
+            --spring.datasource.url=jdbc:postgresql://postgres:5432/elimapass \
+            --spring.datasource.username=testuser \
+            --spring.datasource.password=testpass &
+          export SPRING_PID=$!
+          
+          echo "Waiting for application to start..."
+          sleep 15
+          
+          newman run tests/eLimaPass-Spring.postman_collection.json \
+            -r cli,html --reporter-html-export reports/integration-report.html
+
+      - name: Upload Integration Test Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: reports/
+
+  code-quality:
+    name: Code Quality Analysis
+    runs-on: ubuntu-latest
+    container: maven:3.9-eclipse-temurin-21-alpine
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Cache SonarQube packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Run Tests for Coverage
+        run: mvn test
+
+      - name: Code Quality Analysis with SonarQube
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -Dsonar.projectKey=fcuya13_eLimaPass-spring \
+            -Dflyway.skip=true

@@ -274,6 +274,7 @@ resource "aws_ecs_service" "app" {
   desired_count                      = 1
   deployment_minimum_healthy_percent = 50
   deployment_maximum_percent         = 200
+  force_new_deployment               = true
 
   load_balancer {
     target_group_arn = aws_lb_target_group.app.arn
