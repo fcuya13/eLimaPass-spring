@@ -6,7 +6,7 @@ on:
 
 jobs:
   delivery:
-    uses: ./.github/workflows/cd.yml
+    uses: ./.github/workflows/delivery.yml
     secrets: inherit
 
   deploy:
