@@ -13,6 +13,7 @@ jobs:
 
   build-artifact:
     name: Build Application Artifact
+    needs: perform-tests-and-integration
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
