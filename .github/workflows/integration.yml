@@ -55,7 +55,7 @@ jobs:
         run: mvn clean package -DskipTests
 
       - name: Cucumber Tests
-        run: mvn test -Dtest="com.francocuya13.elimapassspring.integration.steps.CucumberTestRunner"
+        run: mvn test -Dtest="com.francocuya13.elimapassspring.integration.CucumberTestRunner"
 
       - name: Setup Node.js
         run: apk add --no-cache nodejs npm
