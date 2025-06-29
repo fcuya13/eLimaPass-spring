@@ -1,7 +1,7 @@
-# ALB Outputs
-output "alb_dns_name" {
-  description = "The DNS name of the load balancer"
-  value       = aws_lb.main.dns_name
+# API GW Outputs
+output "api_gateway_invoke_url" {
+  description = "The URL to invoke the API Gateway endpoint"
+  value       = aws_api_gateway_deployment.this.invoke_url
 }
 
 # Database Outputs
