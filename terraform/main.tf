@@ -75,6 +75,87 @@ resource "aws_route_table_association" "public_2" {
   route_table_id = aws_route_table.public.id
 }
 
+# API Gateway VPC Link
+resource "aws_api_gateway_vpc_link" "this" {
+  name        = "${var.app_name}-vpclink"
+  description = "VPC link for ${var.app_name}"
+  target_arns = [aws_lb.main.arn]
+}
+
+# API Gateway REST API
+resource "aws_api_gateway_rest_api" "this" {
+  name        = "${var.app_name}-api"
+  description = "API Gateway for ${var.app_name}"
+
+  endpoint_configuration {
+    types = ["REGIONAL"]
+  }
+}
+
+# API Gateway Resource
+resource "aws_api_gateway_resource" "proxy" {
+  rest_api_id = aws_api_gateway_rest_api.this.id
+  parent_id   = aws_api_gateway_rest_api.this.root_resource_id
+  path_part   = "{proxy+}"
+}
+
+# API Gateway Method
+resource "aws_api_gateway_method" "proxy" {
+  rest_api_id   = aws_api_gateway_rest_api.this.id
+  resource_id   = aws_api_gateway_resource.proxy.id
+  http_method   = "ANY"
+  authorization = "NONE"
+
+  request_parameters = {
+    "method.request.path.proxy" = true
+  }
+}
+
+# API Gateway Integration
+resource "aws_api_gateway_integration" "proxy" {
+  rest_api_id = aws_api_gateway_rest_api.this.id
+  resource_id = aws_api_gateway_resource.proxy.id
+  http_method = aws_api_gateway_method.proxy.http_method
+
+  type                    = "HTTP_PROXY"
+  integration_http_method = "ANY"
+  uri                     = "http://${aws_lb.main.dns_name}/{proxy}"
+  connection_type         = "VPC_LINK"
+  connection_id           = aws_api_gateway_vpc_link.this.id
+
+  request_parameters = {
+    "integration.request.path.proxy" = "method.request.path.proxy"
+  }
+}
+
+# API Gateway Deployment
+resource "aws_api_gateway_deployment" "this" {
+  depends_on = [aws_api_gateway_integration.proxy]
+
+  rest_api_id = aws_api_gateway_rest_api.this.id
+  stage_name  = "prod"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# CloudWatch Log Group for API Gateway
+resource "aws_cloudwatch_log_group" "api_gateway" {
+  name              = "/aws/apigateway/${aws_api_gateway_rest_api.this.name}"
+  retention_in_days = 14
+}
+
+# ECS Cluster using EC2
+resource "aws_ecs_cluster" "main" {
+  name = "${var.app_name}-cluster"
+
+  setting {
+    name  = "containerInsights"
+    value = "disabled" # Disable for cost savings
+  }
+}
+
 # Security Groups
 resource "aws_security_group" "alb" {
   name        = "${var.app_name}-alb-sg"
@@ -112,11 +193,11 @@ resource "aws_security_group" "ecs" {
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    protocol        = "tcp"
-    from_port       = var.container_port
-    to_port         = var.container_port
-    security_groups = [aws_security_group.alb.id]
-    description     = "Allow ALB to ECS traffic"
+    protocol    = "tcp"
+    from_port   = var.container_port
+    to_port     = var.container_port
+    cidr_blocks = ["0.0.0.0/0"]  # Allow traffic from anywhere to the container port
+    description = "Allow traffic to container port"
   }
 
   egress {
@@ -129,18 +210,6 @@ resource "aws_security_group" "ecs" {
 
   tags = {
     Name = "${var.app_name}-ecs-sg"
-  }
-}
-
-
-
-# ECS Cluster using EC2
-resource "aws_ecs_cluster" "main" {
-  name = "${var.app_name}-cluster"
-
-  setting {
-    name  = "containerInsights"
-    value = "disabled" # Disable for cost savings
   }
 }
 
@@ -172,7 +241,7 @@ resource "aws_iam_instance_profile" "ecs_instance" {
 resource "aws_launch_template" "ecs" {
   name_prefix   = "${var.app_name}-ecs-"
   image_id      = var.ecs_ami_id
-  instance_type = "t2.micro"  # Use your instance type
+  instance_type = "t2.micro"
 
   # If you had user data in your launch configuration
   user_data = base64encode(<<-EOF
@@ -182,9 +251,8 @@ resource "aws_launch_template" "ecs" {
   )
 
   # Security group settings
-  vpc_security_group_ids = [aws_security_group.ecs.id] # Replace with your security groups
+  vpc_security_group_ids = [aws_security_group.ecs.id]
 
-  # IAM instance profile if you had one
   iam_instance_profile {
     name = aws_iam_instance_profile.ecs_instance.name
   }
