@@ -10,4 +10,5 @@ import java.util.UUID;
 public interface RecargaRepository extends JpaRepository<Recarga, UUID> {
 
     List<Recarga> findTop10ByTarjeta_CodigoOrderByFechaHoraDesc(String codigo);
+    Recarga findFirstByMedioPago(String medioPago);
 }

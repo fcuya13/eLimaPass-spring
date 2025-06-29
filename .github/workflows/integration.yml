@@ -54,6 +54,9 @@ jobs:
       - name: Build Spring Boot App
         run: mvn clean package -DskipTests
 
+      - name: Cucumber Tests
+        run: mvn test -Dtest="com.francocuya13.elimapassspring.integration.CucumberTestRunner"
+
       - name: Setup Node.js
         run: apk add --no-cache nodejs npm
 
@@ -70,7 +73,7 @@ jobs:
           
           echo "Waiting for application to start..."
           sleep 15
-          
+                    
           newman run tests/eLimaPass-Spring.postman_collection.json \
             -r cli,html --reporter-html-export reports/integration-report.html
 
@@ -78,7 +81,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: integration-test-results
-          path: reports/
+          path: |
+            reports/
+            target/cucumber-reports/cucumber.html
 
   code-quality:
     name: Code Quality Analysis
