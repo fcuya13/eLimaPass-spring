@@ -49,7 +49,7 @@ jobs:
 
       - name: Push Docker image to GHCR
         run: |
-          docker push ghcr.io/${{ github.repository }}:latest
+          docker push ghcr.io/elimapass-spring:latest
 
   functional-tests:
     runs-on: ubuntu-latest
