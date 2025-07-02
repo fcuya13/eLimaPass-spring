@@ -52,6 +52,7 @@ jobs:
           docker push ghcr.io/${{ github.repository }}:latest
 
   functional-tests:
+    steps:
     - name: Trigger frontend functional tests
       uses: peter-evans/repository-dispatch@v3
       with:
