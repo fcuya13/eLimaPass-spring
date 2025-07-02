@@ -45,11 +45,11 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ghcr.io/elimapass-spring:latest .
+          docker build -t ghcr.io/fcuya13/elimapass-spring:latest .
 
       - name: Push Docker image to GHCR
         run: |
-          docker push ghcr.io/elimapass-spring:latest
+          docker push ghcr.io/fcuya13/elimapass-spring:latest
 
   functional-tests:
     runs-on: ubuntu-latest
