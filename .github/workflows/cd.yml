@@ -3,7 +3,9 @@ on:
   push:
     branches:
       - master
-
+permissions:
+  contents: read
+  packages: write
 jobs:
   delivery:
     uses: ./.github/workflows/delivery.yml
