@@ -10,6 +10,8 @@ import java.util.List;
 @Service
 public class ParaderoRutaService {
 
+
+
     @Autowired
     private ParaderoRutaRepository paraderoRutaRepository;
 
