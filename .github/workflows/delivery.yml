@@ -15,6 +15,9 @@ jobs:
     name: Build Application Artifact
     needs: perform-tests-and-integration
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,7 +39,33 @@ jobs:
           path: target/*.jar
           retention-days: 14
 
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          docker build -t ghcr.io/fcuya13/elimapass-spring:latest .
+
+      - name: Push Docker image to GHCR
+        run: |
+          docker push ghcr.io/fcuya13/elimapass-spring:latest
+
+  functional-tests:
+    runs-on: ubuntu-latest
+    needs: build-artifact
+    steps:
+    - name: Trigger frontend functional tests
+      uses: peter-evans/repository-dispatch@v3
+      with:
+        token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        repository: fcuya13/eLimaPass
+        event-type: backend-updated
+
   performance-tests:
-    needs: [perform-tests-and-integration, build-artifact]
+    needs: [perform-tests-and-integration, build-artifact, functional-tests]
     uses: ./.github/workflows/performance.yml
     secrets: inherit
